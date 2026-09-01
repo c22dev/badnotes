@@ -1,5 +1,5 @@
 # BadNotes
-an iOS tweak that unlocks Goodnotes Pro
+An iOS tweak that unlocks Goodnotes Pro
 
 ## How does this work ?
 
