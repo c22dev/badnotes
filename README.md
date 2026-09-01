@@ -1,7 +1,7 @@
 # BadNotes
 an iOS tweak that unlocks Goodnotes Pro
 
-## How does this works ?
+## How does this work ?
 
 Goodnotes uses RevenueCat to manage subscriptions. Every time the app starts, it sends a request to a GoodNotes proxied RevenueCat's API (`/v1/subscribers/<user_id>`) to check your subscription status
 
