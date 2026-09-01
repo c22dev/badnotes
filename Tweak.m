@@ -1,4 +1,4 @@
-// BadNotes - v0.1
+// BadNotes - v0.2
 // A nice tweak for GoodNotes
 // c22dev (Constantin Clerc)
 
