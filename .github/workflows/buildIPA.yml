@@ -70,7 +70,7 @@ jobs:
           name: Badnotes (${{ github.run_number }})
           files: |
             Badnotes.ipa
-          draft: true
+          draft: false
       - name: Output Release URL
         run: |
           echo "::notice::Release available at: https://github.com/${{ github.repository }}/releases"
