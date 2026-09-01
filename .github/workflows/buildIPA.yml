@@ -1,0 +1,77 @@
+name: Build IPA
+on:
+  workflow_dispatch:
+    inputs:
+      ipa_url:
+        description: "URL to the decrypted IPA file"
+        default: ""
+        required: true
+        type: string
+
+      tweak_url:
+        description: "URL to the BadNotes tweak file"
+        default: "https://github.com/c22dev/badnotes/releases/download/0.1/BadNotes_0.1.dylib"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    env:
+      THEOS: ${{ github.workspace }}/theos
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.2.0'
+      - name: Hide Sensitive Inputs
+        uses: levibostian/action-hide-sensitive-inputs@v1
+      - name: Download and Validate IPA
+        env:
+          IPA_URL: ${{ inputs.ipa_url }}
+        run: |
+          wget "$IPA_URL" --no-verbose -O "$GITHUB_WORKSPACE/goodnotes.ipa"
+          file_type=$(file --mime-type -b "$GITHUB_WORKSPACE/goodnotes.ipa")
+          if [[ "$file_type" != "application/x-ios-app" && "$file_type" != "application/zip" ]]; then
+            echo "::error::Validation failed: The downloaded file is not a valid IPA. Detected type: $file_type."
+            exit 1
+          fi
+      - name: Download and Validate Tweak
+        env:
+          TWEAK_URL: ${{ inputs.tweak_url }}
+        run: |
+          wget "$TWEAK_URL" --no-verbose -O "$GITHUB_WORKSPACE/badnotes.dylib"
+          file_type=$(file --mime-type -b "$GITHUB_WORKSPACE/badnotes.dylib")
+      - name: Setup insert-dylib
+        run: |
+          git clone https://github.com/Tyilo/insert_dylib.git
+          xcrun clang -x c -arch arm64 ./insert_dylib/insert_dylib/main.c -I/usr/include/ -o insert-dylib
+          sudo mv insert-dylib /usr/local/bin/
+          sudo chmod +x /usr/local/bin/insert-dylib
+      - name: Setup ivinject
+        run: |
+          git clone https://github.com/whoeevee/ivinject.git
+          cp -r ./ivinject/KnownFrameworks ~/.ivinject
+          wget https://github.com/whoeevee/ivinject/releases/download/first/ivinject-arm64
+          sudo mv ivinject-arm64 /usr/local/bin/
+          sudo chmod +x /usr/local/bin/ivinject-arm64
+      - name: Create Goodnotes package
+        run: |
+          ivinject-arm64 goodnotes.ipa Badnotes.ipa \
+            -i badnotes.dylib \
+            -s - -d --level Optimal
+
+      - name: Upload to GitHub Releases
+        uses: softprops/action-gh-release@v2.0.1
+        with:
+          tag_name: badnotes-${{ github.run_number }}
+          name: Badnotes (${{ github.run_number }})
+          files: |
+            Badnotes.ipa
+          draft: true
+      - name: Output Release URL
+        run: |
+          echo "::notice::Release available at: https://github.com/${{ github.repository }}/releases"
