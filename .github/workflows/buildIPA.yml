@@ -24,9 +24,6 @@ jobs:
       THEOS: ${{ github.workspace }}/theos
     steps:
       - uses: actions/checkout@v4
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '16.2.0'
       - name: Hide Sensitive Inputs
         uses: levibostian/action-hide-sensitive-inputs@v1
       - name: Download and Validate IPA
@@ -48,7 +45,9 @@ jobs:
       - name: Setup insert-dylib
         run: |
           git clone https://github.com/Tyilo/insert_dylib.git
-          xcrun clang -x c -arch arm64 ./insert_dylib/insert_dylib/main.c -I/usr/include/ -o insert-dylib
+          xcrun clang -x c -arch arm64 \
+            -Wno-error=implicit-function-declaration \
+            ./insert_dylib/insert_dylib/main.c -I/usr/include/ -o insert-dylib
           sudo mv insert-dylib /usr/local/bin/
           sudo chmod +x /usr/local/bin/insert-dylib
       - name: Setup ivinject
