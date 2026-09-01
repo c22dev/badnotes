@@ -33,7 +33,7 @@ static NSData *injectEntitlements(NSData *original, NSString *uid) {
     NSString *planKey = @"pro";
     NSString *productId = @"com.goodnotes.pro_7dt_1y_3599";
     NSString *mgmtURL = @"https://apps.apple.com/account/subscriptions";
-    NSDictionary *aiQuota = @{ @"ai": @{ @"quota": @999999, @"period": @"P1M" } };
+    NSDictionary *forMyCita = @{ @"ai": @{ @"quota": @525, @"period": @"P1M" } };
 
     NSMutableDictionary *root = nil;
     if (original.length) {
@@ -79,14 +79,14 @@ static NSData *injectEntitlements(NSData *original, NSString *uid) {
         @"pending_product_id": productId,
         @"pending_product_plan_key": planKey,
         @"pending_subscription_period": @"P1Y",
-        @"quotas": aiQuota,
+        @"quotas": forMyCita,
         @"management_url": mgmtURL,
         @"renewal_type": @"auto",
         @"subscription_period": @"P1Y",
         @"app_type": @"ios",
     } };
 
-    sub[@"quotas"] = aiQuota;
+    sub[@"quotas"] = forMyCita;
     sub[@"management_url"] = mgmtURL;
 
     root[@"subscriber"] = sub;
