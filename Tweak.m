@@ -1,4 +1,4 @@
-// BadNotes - v0.2
+// BadNotes - v0.3
 // A nice tweak for GoodNotes
 // c22dev (Constantin Clerc)
 
@@ -95,6 +95,39 @@ static NSData *injectEntitlements(NSData *original, NSString *uid) {
     return out ?: original;
 }
 
+static BOOL classOwnsMethod(Class cls, SEL sel) {
+    if (!cls) return NO;
+    unsigned int n = 0;
+    Method *list = class_copyMethodList(cls, &n);
+    BOOL owns = NO;
+    for (unsigned int i = 0; i < n; i++)
+        if (method_getName(list[i]) == sel) { owns = YES; break; }
+    if (list) free(list);
+    return owns;
+}
+
+static void overrideScoped(Class cls, const char *selName, IMP imp, const char *types) {
+    if (!cls) return;
+    SEL sel = sel_registerName(selName);
+    if (classOwnsMethod(cls, sel)) {
+        Method m = class_getInstanceMethod(cls, sel);
+        if (m) method_setImplementation(m, imp);
+    } else if (class_getInstanceMethod(cls, sel)) {
+        class_addMethod(cls, sel, imp, types);
+    }
+}
+
+static void installStoreKitSilencer(void) {
+    IMP noop = imp_implementationWithBlock(^(id _self) {});
+    IMP noop1 = imp_implementationWithBlock(^(id _self, id _a) {});
+
+    overrideScoped(objc_getClass("SKReceiptRefreshRequest"), "start", noop, "v@:");
+
+    Class queue = objc_getClass("SKPaymentQueue");
+    overrideScoped(queue, "restoreCompletedTransactions", noop, "v@:");
+    overrideScoped(queue, "restoreCompletedTransactionsWithApplicationUsername:", noop1, "v@:@");
+}
+
 static void installStringPatch(void) {
     Class cls = objc_getClass("NSBundle");
     if (!cls) return;
@@ -163,6 +196,7 @@ static void installNetworkPatch(void) {
 __attribute__((constructor))
 static void tweak_init(void) {
     @autoreleasepool {
+        installStoreKitSilencer();
         installStringPatch();
         installNetworkPatch();
     }
